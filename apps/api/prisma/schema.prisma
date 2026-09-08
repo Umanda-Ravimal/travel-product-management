@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Product {
+  id             String        @id @default(uuid())
+  productName    String
+  destination    String
+  category       String
+  description    String
+  price          Decimal       @db.Decimal(12, 2)
+  currency       String        @default("LKR")
+  inventoryCount Int
+  validFrom      DateTime
+  validUntil     DateTime
+  status         ProductStatus
+
+  highlights     String[]
+  inclusions     String[]
+  tags           String[]
+
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([destination])
+  @@index([category])
+  @@index([status])
+  @@index([validUntil])
+  @@index([price])
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+}
