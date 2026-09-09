@@ -13,6 +13,26 @@ import { ProductStatus } from '@prisma/client';
 export class ProductsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private getAvailableProductFilter() {
+    const now = new Date();
+  
+    return {
+      status: 'ACTIVE' as const,
+  
+      inventoryCount: {
+        gt: 0,
+      },
+  
+      validFrom: {
+        lte: now,
+      },
+  
+      validUntil: {
+        gte: now,
+      },
+    };
+  }
+
   async create(createProductDto: CreateProductDto) {
     const from = new Date(createProductDto.validFrom);
     const until = new Date(createProductDto.validUntil);
@@ -56,12 +76,10 @@ export class ProductsService {
   }
 
   async findAll(query: ProductQueryDto) {
-    const now = new Date();
     const {
       search,
       destination,
       category,
-      status,
       page = 1,
       limit = 10,
     } = query;
@@ -69,19 +87,7 @@ export class ProductsService {
     const skip = (page - 1) * limit;
 
     const where = {
-      status: 'ACTIVE' as ProductStatus,
-
-      inventoryCount: {
-        gt: 0,
-      },
-      validFrom: {
-        lte: now,
-      },
-
-      validUntil: {
-        gte: now,
-      },
-      ...(status && { status }),
+      ...this.getAvailableProductFilter(),
 
       ...(destination && {
         destination: {

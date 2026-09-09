@@ -23,10 +23,6 @@ import {
     category?: string;
   
     @IsOptional()
-    @IsEnum(ProductStatus)
-    status?: ProductStatus;
-  
-    @IsOptional()
     @Type(() => Number)
     @IsInt()
     @Min(1)
