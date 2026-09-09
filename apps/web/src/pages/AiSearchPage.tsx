@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import {
   searchProductsWithAi,
   type AiSearchResponse,
 } from '../api/ai.api';
-import { Alert, Box, Stack } from '../components/atoms';
+import { Alert, Box, CircularProgress, Grid, Stack } from '../components/atoms';
 import SearchFiltersPanel, {
   MAX_PRICE,
   MIN_PRICE,
@@ -33,6 +33,17 @@ export default function AiSearchPage() {
 
   const [currentPage, setCurrentPage] = useState(1);
 
+  const visibleProducts = useMemo(() => {
+    if (!searchResult) {
+      return [];
+    }
+
+    return searchResult.data.filter((product) => {
+      const price = Number(product.price);
+      return price >= priceRange[0] && price <= priceRange[1];
+    });
+  }, [searchResult, priceRange]);
+
   const performSearch = async (searchQuery = query) => {
     const trimmedQuery = searchQuery.trim();
 
@@ -48,6 +59,10 @@ export default function AiSearchPage() {
       const result = await searchProductsWithAi(trimmedQuery);
 
       setSearchResult(result);
+      setPriceRange([
+        result.filters.minPrice ?? MIN_PRICE,
+        result.filters.maxPrice ?? MAX_PRICE,
+      ]);
     } catch (err) {
       setError(
         err instanceof Error
@@ -65,22 +80,15 @@ export default function AiSearchPage() {
     performSearch(value);
   };
 
-  const handlePrevious = () => {
-    if (currentPage > 1) {
-      setCurrentPage((page) => page - 1);
-    }
-  };
-
-  const handleNext = () => {
-    if (searchResult && currentPage < searchResult.meta.totalPages) {
-      setCurrentPage((page) => page + 1);
-    }
+  const handlePriceRangeChange = (value: PriceRange) => {
+    setPriceRange(value);
+    setCurrentPage(1);
   };
 
   const hasResults = searchResult !== null;
 
   return (
-    <Box>
+    <Stack spacing={2.5}>
       <SearchHeader />
 
       <SearchQueryBox
@@ -92,38 +100,46 @@ export default function AiSearchPage() {
       />
 
       {error && (
-        <Alert
-          severity="error"
-          sx={{ mb: 3 }}
-          onClose={() => setError('')}
-        >
+        <Alert severity="error" onClose={() => setError('')}>
           {error}
         </Alert>
       )}
 
-      {hasResults && searchResult && (
-        <Stack
-          direction={{ xs: 'column', md: 'row' }}
-          spacing={3}
-          sx={{ alignItems: 'flex-start' }}
+      {hasResults && searchResult ? (
+        <Grid container spacing={2} sx={{ alignItems: 'flex-start' }}>
+          <Grid size={{ xs: 12, md: 3 }}>
+            <SearchFiltersPanel
+              filters={searchResult.filters}
+              priceRange={priceRange}
+              onPriceRangeChange={handlePriceRangeChange}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 9 }}>
+            <SearchResultsPanel
+              query={searchResult.query}
+              products={visibleProducts}
+              loading={loading}
+              currentPage={currentPage}
+              onPageChange={setCurrentPage}
+              onProductClick={(id) => navigate(`/products/${id}`)}
+            />
+          </Grid>
+        </Grid>
+      ) : loading ? (
+        <Box
+          sx={{
+            minHeight: 280,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
         >
-          <SearchFiltersPanel
-            filters={searchResult.filters}
-            priceRange={priceRange}
-            onPriceRangeChange={setPriceRange}
-          />
-
-          <SearchResultsPanel
-            result={searchResult}
-            currentPage={currentPage}
-            onPrevious={handlePrevious}
-            onNext={handleNext}
-            onProductClick={(id) => navigate(`/products/${id}`)}
-          />
-        </Stack>
+          <CircularProgress />
+        </Box>
+      ) : (
+        !error && <SearchIdleState />
       )}
-
-      {!hasResults && !loading && !error && <SearchIdleState />}
-    </Box>
+    </Stack>
   );
 }

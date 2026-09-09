@@ -4,7 +4,6 @@ import {
   Chip,
   CircularProgress,
   InputAdornment,
-  Paper,
   Stack,
   TextField,
   Typography,
@@ -27,6 +26,15 @@ interface SearchQueryBoxProps {
   onExampleSelect: (example: string) => void;
 }
 
+const fieldSx = {
+  backgroundColor: '#FFFFFF',
+  '& .MuiOutlinedInput-root': {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 1.5,
+    height: 42,
+  },
+};
+
 export default function SearchQueryBox({
   query,
   loading,
@@ -35,59 +43,18 @@ export default function SearchQueryBox({
   onExampleSelect,
 }: SearchQueryBoxProps) {
   return (
-    <Paper
-      elevation={0}
+    <Box
       sx={{
-        p: { xs: 3, md: 4 },
-        mb: 4,
-        border: '1px solid',
-        borderColor: 'primary.light',
-        background: 'linear-gradient(135deg, #F0FBF9 0%, #E7F7F5 100%)',
-        borderRadius: 3,
+        p: 1.5,
+        borderRadius: 2,
+        background:
+          'linear-gradient(90deg, #E7F7F3 0%, #DDF4F1 50%, #EAF8F6 100%)',
       }}
     >
       <Stack
-        direction="row"
-        spacing={2}
-        sx={{ mb: 2.5, alignItems: 'flex-start' }}
-      >
-        <Box
-          sx={{
-            width: 46,
-            height: 46,
-            borderRadius: 2,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'primary.main',
-            color: 'white',
-            flexShrink: 0,
-          }}
-        >
-          <AutoAwesome />
-        </Box>
-
-        <Box>
-          <Typography
-            variant="h6"
-            sx={{ mb: 0.5, fontWeight: 700 }}
-          >
-            What are you looking for?
-          </Typography>
-
-          <Typography
-            variant="body2"
-            color="text.secondary"
-          >
-            Describe your ideal travel experience and let AI
-            find matching products for you.
-          </Typography>
-        </Box>
-      </Stack>
-
-      <Stack
         direction={{ xs: 'column', sm: 'row' }}
-        spacing={1.5}
+        spacing={1.25}
+        sx={{ alignItems: { xs: 'stretch', sm: 'center' } }}
       >
         <TextField
           fullWidth
@@ -99,21 +66,16 @@ export default function SearchQueryBox({
             }
           }}
           placeholder="e.g. Show me dinner buffets in Colombo"
+          sx={fieldSx}
           slotProps={{
             input: {
               startAdornment: (
                 <InputAdornment position="start">
                   <SearchOutlined
-                    sx={{ color: 'text.secondary' }}
+                    sx={{ color: 'text.secondary', fontSize: 20 }}
                   />
                 </InputAdornment>
               ),
-            },
-          }}
-          sx={{
-            '& .MuiOutlinedInput-root': {
-              backgroundColor: 'white',
-              borderRadius: 2,
             },
           }}
         />
@@ -124,56 +86,64 @@ export default function SearchQueryBox({
           disabled={loading || !query.trim()}
           startIcon={
             loading ? (
-              <CircularProgress
-                size={18}
-                color="inherit"
-              />
+              <CircularProgress size={16} color="inherit" />
             ) : (
               <AutoAwesome />
             )
           }
           sx={{
-            minWidth: 170,
-            height: 56,
+            height: 42,
+            px: 2.2,
+            whiteSpace: 'nowrap',
+            minWidth: { sm: 168 },
           }}
         >
           {loading ? 'Searching...' : 'Search with AI'}
         </Button>
       </Stack>
 
-      <Box sx={{ mt: 2.5 }}>
+      <Box sx={{ mt: 1.5 }}>
         <Typography
           variant="caption"
-          color="text.secondary"
-          sx={{ display: 'block', mb: 1 }}
+          sx={{
+            display: 'block',
+            mb: 1,
+            fontWeight: 600,
+            color: '#226B69',
+          }}
         >
           Try an example
         </Typography>
 
-        <Stack
-          direction="row"
-          spacing={1}
-          sx={{ flexWrap: 'wrap' }}
-        >
-          {QUICK_SEARCHES.map((example) => (
-            <Chip
-              key={example}
-              label={example}
-              onClick={() => onExampleSelect(example)}
-              sx={{
-                backgroundColor: 'white',
-                border: '1px solid',
-                borderColor: 'divider',
-                cursor: 'pointer',
-                '&:hover': {
-                  borderColor: 'primary.main',
-                  color: 'primary.main',
-                },
-              }}
-            />
-          ))}
-        </Stack>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+          {QUICK_SEARCHES.map((example) => {
+            const selected = query === example;
+
+            return (
+              <Chip
+                key={example}
+                label={example}
+                size="small"
+                onClick={() => onExampleSelect(example)}
+                sx={{
+                  height: 26,
+                  backgroundColor: selected ? 'primary.main' : '#FFFFFF',
+                  color: selected ? '#FFFFFF' : 'text.primary',
+                  border: '1px solid',
+                  borderColor: selected ? 'primary.main' : '#C9E8E4',
+                  fontWeight: 600,
+                  fontSize: '0.72rem',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    borderColor: 'primary.main',
+                    color: selected ? '#FFFFFF' : 'primary.main',
+                  },
+                }}
+              />
+            );
+          })}
+        </Box>
       </Box>
-    </Paper>
+    </Box>
   );
 }

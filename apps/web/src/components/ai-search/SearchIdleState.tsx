@@ -1,53 +1,51 @@
-import { Box, Paper, Typography } from '../atoms';
+import { Box, Typography } from '../atoms';
 import { AutoAwesome } from '../atoms/icons';
 
 export default function SearchIdleState() {
   return (
-    <Paper
-      elevation={0}
+    <Box
       sx={{
-        p: { xs: 4, md: 7 },
+        minHeight: 280,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
         textAlign: 'center',
-        border: '1px dashed',
-        borderColor: 'divider',
-        borderRadius: 3,
+        px: 2,
+        py: 6,
+        border: '1px dashed #D8E0E3',
+        borderRadius: 2,
+        backgroundColor: '#F8FAFA',
       }}
     >
       <Box
         sx={{
-          width: 64,
-          height: 64,
-          mx: 'auto',
-          mb: 2,
-          borderRadius: '50%',
-          backgroundColor: 'primary.light',
+          width: 48,
+          height: 48,
+          mb: 1.5,
+          borderRadius: 2,
+          backgroundColor: '#E4F6F4',
           color: 'primary.main',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <AutoAwesome fontSize="large" />
+        <AutoAwesome />
       </Box>
 
-      <Typography
-        variant="h6"
-        sx={{ mb: 1, fontWeight: 700 }}
-      >
+      <Typography sx={{ fontWeight: 800, mb: 0.5 }}>
         Search your travel catalog with AI
       </Typography>
 
       <Typography
         color="text.secondary"
-        sx={{
-          maxWidth: 550,
-          mx: 'auto',
-        }}
+        variant="body2"
+        sx={{ maxWidth: 480 }}
       >
-        Instead of selecting multiple filters, simply
-        describe the travel experience you're looking
-        for and AI will find the relevant products.
+        Describe the travel experience you want and AI will match products from
+        your catalog.
       </Typography>
-    </Paper>
+    </Box>
   );
 }

@@ -1,22 +1,14 @@
 import type { Product } from '../../types/product';
-import {
-  Box,
-  Chip,
-  Divider,
-  IconButton,
-  Paper,
-  Stack,
-  Typography,
-} from '../atoms';
+import { Box, Card, CardContent, Chip, Stack, Typography } from '../atoms';
 import {
   CalendarMonthOutlined,
-  FavoriteBorderOutlined,
   Inventory2Outlined,
   LocationOnOutlined,
 } from '../atoms/icons';
-import { formatDate, formatPrice } from '../../utils/format';
+import { formatDate, formatPrice, getDisplayStatus } from '../../utils/format';
 import { getProductImage } from '../../utils/productImages';
-import { ProductTitle } from '../molecules';
+import { CategoryChip, ProductTitle } from '../molecules';
+import ProductStatusBadge from '../products/ProductStatusBadge';
 
 interface SearchProductCardProps {
   product: Product;
@@ -30,26 +22,25 @@ export default function SearchProductCard({
   onClick,
 }: SearchProductCardProps) {
   return (
-    <Paper
-      elevation={0}
+    <Card
+      onClick={onClick}
       sx={{
-        overflow: 'hidden',
-        border: '1px solid',
-        borderColor: 'divider',
-        borderRadius: 2.5,
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+        height: '100%',
         cursor: 'pointer',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        transition: 'transform 0.18s ease, box-shadow 0.18s ease',
         '&:hover': {
-          transform: 'translateY(-3px)',
+          transform: 'translateY(-2px)',
           boxShadow: '0 8px 24px rgba(20, 36, 51, 0.08)',
         },
       }}
-      onClick={onClick}
     >
       <Box
         sx={{
           position: 'relative',
-          height: 190,
+          height: 132,
           overflow: 'hidden',
           backgroundColor: '#E8EEEE',
         }}
@@ -62,87 +53,50 @@ export default function SearchProductCard({
             width: '100%',
             height: '100%',
             objectFit: 'cover',
-          }}
-          onError={(event) => {
-            event.currentTarget.style.display = 'none';
+            display: 'block',
           }}
         />
 
         {isBestMatch && (
           <Chip
-            label="BEST MATCH"
+            label="Best match"
             size="small"
             sx={{
               position: 'absolute',
-              top: 12,
-              left: 12,
+              top: 10,
+              left: 10,
+              height: 22,
               backgroundColor: 'primary.main',
               color: 'white',
               fontWeight: 700,
-              fontSize: 10,
+              fontSize: '0.65rem',
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
             }}
           />
         )}
-
-        <IconButton
-          onClick={(event) => {
-            event.stopPropagation();
-          }}
-          sx={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            backgroundColor: 'rgba(255,255,255,0.92)',
-            '&:hover': {
-              backgroundColor: 'white',
-            },
-          }}
-        >
-          <FavoriteBorderOutlined />
-        </IconButton>
       </Box>
 
-      <Box sx={{ p: 2 }}>
+      <CardContent
+        sx={{
+          p: 1.75,
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <Box sx={{ mb: 0.5 }}>
+          <ProductTitle clamp={2}>{product.productName}</ProductTitle>
+        </Box>
+
         <Stack
           direction="row"
-          spacing={1}
-          sx={{
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-          }}
+          spacing={0.5}
+          sx={{ alignItems: 'center', mb: 1 }}
         >
-          <Box sx={{ minWidth: 0 }}>
-            <ProductTitle>{product.productName}</ProductTitle>
-
-            <Stack
-              direction="row"
-              spacing={0.5}
-              sx={{ alignItems: 'center' }}
-            >
-              <LocationOnOutlined
-                sx={{
-                  fontSize: 15,
-                  color: 'text.secondary',
-                }}
-              />
-
-              <Typography
-                variant="caption"
-                color="text.secondary"
-              >
-                {product.destination}
-              </Typography>
-            </Stack>
-          </Box>
-
-          <Typography
-            color="primary.main"
-            sx={{
-              whiteSpace: 'nowrap',
-              fontWeight: 800,
-            }}
-          >
-            {formatPrice(product)}
+          <LocationOnOutlined sx={{ fontSize: 15, color: 'text.secondary' }} />
+          <Typography variant="body2" color="text.secondary">
+            {product.destination}
           </Typography>
         </Stack>
 
@@ -150,13 +104,12 @@ export default function SearchProductCard({
           variant="body2"
           color="text.secondary"
           sx={{
-            mt: 1.5,
-            mb: 1.5,
+            mb: 1.25,
             display: '-webkit-box',
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
-            minHeight: 40,
+            minHeight: 38,
           }}
         >
           {product.description}
@@ -165,79 +118,54 @@ export default function SearchProductCard({
         <Stack
           direction="row"
           spacing={0.75}
-          sx={{ mb: 1.5, flexWrap: 'wrap' }}
+          sx={{ mb: 1.25, alignItems: 'center', flexWrap: 'wrap', rowGap: 0.75 }}
         >
-          <Chip
-            label={product.category}
-            size="small"
-            sx={{
-              backgroundColor: 'primary.light',
-              color: 'primary.dark',
-              fontWeight: 600,
-            }}
-          />
-
-          {product.tags.slice(0, 2).map((tag) => (
-            <Chip
-              key={tag}
-              label={tag}
-              size="small"
-              variant="outlined"
-              sx={{
-                borderColor: 'divider',
-              }}
-            />
-          ))}
+          <CategoryChip category={product.category} />
+          <ProductStatusBadge status={getDisplayStatus(product)} />
         </Stack>
 
-        <Divider sx={{ mb: 1.5 }} />
+        <Box
+          sx={{
+            mt: 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 1,
+          }}
+        >
+          <Typography
+            sx={{
+              fontWeight: 800,
+              fontSize: '0.85rem',
+              color: '#087F7B',
+            }}
+          >
+            {formatPrice(product)}
+          </Typography>
+        </Box>
 
         <Stack
           direction="row"
           spacing={1.5}
-          sx={{ alignItems: 'center' }}
+          sx={{ mt: 1.1, alignItems: 'center', flexWrap: 'wrap' }}
         >
-          <Stack
-            direction="row"
-            spacing={0.5}
-            sx={{ alignItems: 'center' }}
-          >
-            <Inventory2Outlined
-              sx={{
-                fontSize: 16,
-                color: 'text.secondary',
-              }}
-            />
-
-            <Typography
-              variant="caption"
-              color="text.secondary"
-            >
+          <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
+            <Inventory2Outlined sx={{ fontSize: 14, color: 'text.secondary' }} />
+            <Typography variant="caption" color="text.secondary">
               {product.inventoryCount} available
             </Typography>
           </Stack>
 
-          <Stack
-            direction="row"
-            spacing={0.5}
-            sx={{ alignItems: 'center' }}
-          >
+          <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
             <CalendarMonthOutlined
-              sx={{
-                fontSize: 16,
-                color: 'text.secondary',
-              }}
+              sx={{ fontSize: 14, color: 'text.secondary' }}
             />
-
-            <Typography
-              variant="caption"
-              color="text.secondary"
-            >
+            <Typography variant="caption" color="text.secondary">
               Until {formatDate(product.validUntil)}
             </Typography>
           </Stack>
         </Stack>
-      </Box>
-    </Paper>
+      </CardContent>
+    </Card>
   );
 }

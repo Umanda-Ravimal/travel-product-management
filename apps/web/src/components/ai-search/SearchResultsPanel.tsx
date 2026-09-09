@@ -1,187 +1,219 @@
-import type { AiSearchResponse } from '../../api/ai.api';
+import { useMemo, useState } from 'react';
+
+import type { Product } from '../../types/product';
 import {
   Box,
-  Button,
-  IconButton,
-  Paper,
+  CircularProgress,
+  FormControl,
+  Grid,
+  MenuItem,
+  Pagination,
+  Select,
   Stack,
   Typography,
 } from '../atoms';
-import {
-  ArrowForwardOutlined,
-  AutoAwesome,
-  ChevronLeft,
-  ChevronRight,
-} from '../atoms/icons';
+import { AutoAwesome } from '../atoms/icons';
 import SearchProductCard from './SearchProductCard';
 
+type SearchSort = 'relevant' | 'newest' | 'price_asc' | 'price_desc' | 'name';
+
+const PAGE_SIZE = 6;
+
 interface SearchResultsPanelProps {
-  result: AiSearchResponse;
+  query: string;
+  products: Product[];
+  loading: boolean;
   currentPage: number;
-  onPrevious: () => void;
-  onNext: () => void;
+  onPageChange: (page: number) => void;
   onProductClick: (id: string) => void;
 }
 
 export default function SearchResultsPanel({
-  result,
+  query,
+  products,
+  loading,
   currentPage,
-  onPrevious,
-  onNext,
+  onPageChange,
   onProductClick,
 }: SearchResultsPanelProps) {
-  const start =
-    result.meta.total > 0
-      ? Math.min(
-          (currentPage - 1) * result.meta.limit + 1,
-          result.meta.total,
-        )
-      : 0;
+  const [sort, setSort] = useState<SearchSort>('relevant');
 
-  const end = Math.min(
-    currentPage * result.meta.limit,
-    result.meta.total,
-  );
+  const sortedProducts = useMemo(() => {
+    const next = [...products];
+
+    if (sort === 'newest') {
+      next.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+    } else if (sort === 'price_asc') {
+      next.sort((a, b) => Number(a.price) - Number(b.price));
+    } else if (sort === 'price_desc') {
+      next.sort((a, b) => Number(b.price) - Number(a.price));
+    } else if (sort === 'name') {
+      next.sort((a, b) => a.productName.localeCompare(b.productName));
+    }
+
+    return next;
+  }, [products, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedProducts.length / PAGE_SIZE));
+  const page = Math.min(currentPage, totalPages);
+  const start = sortedProducts.length === 0 ? 0 : (page - 1) * PAGE_SIZE;
+  const visible = sortedProducts.slice(start, start + PAGE_SIZE);
+  const from = sortedProducts.length === 0 ? 0 : start + 1;
+  const to = Math.min(start + PAGE_SIZE, sortedProducts.length);
+  const bestMatchId = sort === 'relevant' ? products[0]?.id : undefined;
 
   return (
-    <Box sx={{ flex: 1, minWidth: 0 }}>
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        spacing={1}
+    <Box
+      sx={{
+        border: '1px solid #E5E9EC',
+        borderRadius: 2.5,
+        backgroundColor: '#FFFFFF',
+        overflow: 'hidden',
+        minHeight: '100%',
+      }}
+    >
+      <Box
         sx={{
-          mb: 2.5,
+          px: 2.5,
+          py: 1.75,
+          display: 'flex',
+          alignItems: 'center',
           justifyContent: 'space-between',
-          alignItems: { xs: 'flex-start', sm: 'center' },
+          gap: 2,
+          flexWrap: 'wrap',
         }}
       >
         <Box>
-          <Typography
-            variant="h6"
-            sx={{ fontWeight: 700 }}
-          >
-            {result.meta.total} products found
+          <Typography sx={{ fontSize: '0.9rem', color: 'text.secondary' }}>
+            Showing {visible.length} of{' '}
+            <Box component="span" sx={{ color: 'primary.main', fontWeight: 800 }}>
+              {sortedProducts.length}
+            </Box>{' '}
+            products
           </Typography>
-
-          <Typography
-            variant="body2"
-            color="text.secondary"
-          >
-            Results for "{result.query}"
+          <Typography variant="caption" color="text.secondary">
+            Results for “{query}”
           </Typography>
         </Box>
 
-        <Button
-          variant="outlined"
-          size="small"
-          endIcon={<ArrowForwardOutlined />}
-          sx={{
-            borderColor: 'divider',
-            color: 'text.primary',
-          }}
-        >
-          Most Relevant
-        </Button>
-      </Stack>
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+          <Typography sx={{ fontSize: '0.82rem', color: 'text.secondary' }}>
+            Sort by
+          </Typography>
+          <FormControl size="small">
+            <Select
+              value={sort}
+              onChange={(event) => {
+                setSort(event.target.value as SearchSort);
+                onPageChange(1);
+              }}
+              sx={{
+                minWidth: 150,
+                height: 36,
+                fontSize: '0.82rem',
+                fontWeight: 600,
+              }}
+            >
+              <MenuItem value="relevant">Most Relevant</MenuItem>
+              <MenuItem value="newest">Newest First</MenuItem>
+              <MenuItem value="price_asc">Price: Low to High</MenuItem>
+              <MenuItem value="price_desc">Price: High to Low</MenuItem>
+              <MenuItem value="name">Name A-Z</MenuItem>
+            </Select>
+          </FormControl>
+        </Stack>
+      </Box>
+
+      <Box sx={{ px: 2.5, pb: 2.5 }}>
+        {loading ? (
+          <Box
+            sx={{
+              minHeight: 240,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <CircularProgress size={28} />
+          </Box>
+        ) : visible.length === 0 ? (
+          <Box
+            sx={{
+              minHeight: 240,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              border: '1px dashed #D8E0E3',
+              borderRadius: 2,
+              backgroundColor: '#F8FAFA',
+              px: 2,
+            }}
+          >
+            <AutoAwesome sx={{ fontSize: 28, color: 'text.disabled', mb: 1 }} />
+            <Typography sx={{ fontWeight: 800, mb: 0.5 }}>
+              No matching products
+            </Typography>
+            <Typography color="text.secondary" variant="body2">
+              Try a different description or adjust the filters.
+            </Typography>
+          </Box>
+        ) : (
+          <Grid container spacing={2}>
+            {visible.map((product) => (
+              <Grid key={product.id} size={{ xs: 12, sm: 6 }}>
+                <SearchProductCard
+                  product={product}
+                  isBestMatch={product.id === bestMatchId && page === 1}
+                  onClick={() => onProductClick(product.id)}
+                />
+              </Grid>
+            ))}
+          </Grid>
+        )}
+      </Box>
 
       <Box
         sx={{
-          display: 'grid',
-          gridTemplateColumns: {
-            xs: '1fr',
-            sm: 'repeat(2, minmax(0, 1fr))',
-            xl: 'repeat(3, minmax(0, 1fr))',
-          },
-          gap: 2.5,
+          px: 2.5,
+          py: 1.5,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 2,
+          flexWrap: 'wrap',
+          borderTop: '1px solid #E5E9EC',
         }}
       >
-        {result.data.map((product, index) => (
-          <SearchProductCard
-            key={product.id}
-            product={product}
-            isBestMatch={index === 0}
-            onClick={() => onProductClick(product.id)}
-          />
-        ))}
+        <Typography sx={{ fontSize: '0.82rem', color: 'text.secondary' }}>
+          {from}-{to} of {sortedProducts.length} products
+        </Typography>
+
+        <Pagination
+          count={totalPages}
+          page={page}
+          onChange={(_, nextPage) => onPageChange(nextPage)}
+          shape="rounded"
+          siblingCount={1}
+          boundaryCount={1}
+          sx={{
+            '& .MuiPaginationItem-root': {
+              minWidth: 32,
+              height: 32,
+              fontWeight: 700,
+              fontSize: '0.8rem',
+            },
+            '& .Mui-selected': {
+              backgroundColor: 'primary.main !important',
+              color: '#FFFFFF',
+            },
+          }}
+        />
       </Box>
-
-      {result.data.length === 0 && (
-        <Paper
-          elevation={0}
-          sx={{
-            p: 6,
-            textAlign: 'center',
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: 2.5,
-          }}
-        >
-          <AutoAwesome
-            sx={{
-              fontSize: 42,
-              color: 'text.disabled',
-              mb: 1,
-            }}
-          />
-
-          <Typography
-            variant="h6"
-            sx={{ mb: 0.5, fontWeight: 700 }}
-          >
-            No matching products
-          </Typography>
-
-          <Typography color="text.secondary">
-            Try describing your search in a different way.
-          </Typography>
-        </Paper>
-      )}
-
-      {result.meta.totalPages > 1 && (
-        <Stack
-          direction="row"
-          spacing={1}
-          sx={{
-            mt: 4,
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <IconButton
-            onClick={onPrevious}
-            disabled={currentPage === 1}
-          >
-            <ChevronLeft />
-          </IconButton>
-
-          <Typography
-            variant="body2"
-            sx={{ px: 2, fontWeight: 600 }}
-          >
-            Page {currentPage} of {result.meta.totalPages}
-          </Typography>
-
-          <IconButton
-            onClick={onNext}
-            disabled={currentPage === result.meta.totalPages}
-          >
-            <ChevronRight />
-          </IconButton>
-        </Stack>
-      )}
-
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        sx={{
-          display: 'block',
-          textAlign: 'center',
-          mt: 1,
-        }}
-      >
-        {result.meta.total > 0
-          ? `Showing ${start}–${end} of ${result.meta.total} results`
-          : 'No results'}
-      </Typography>
     </Box>
   );
 }
