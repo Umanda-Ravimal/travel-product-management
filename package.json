@@ -8,6 +8,10 @@
   "scripts": {
     "dev:api": "npm run start:dev --workspace=apps/api",
     "dev:web": "npm run dev --workspace=apps/web",
+    "db:seed": "npm run db:seed --workspace=apps/api",
     "build": "npm run build --workspaces"
+  },
+  "dependencies": {
+    "react-router-dom": "^7.18.3"
   }
 }

@@ -15,18 +15,18 @@ export class ProductsService {
 
   private getAvailableProductFilter() {
     const now = new Date();
-  
+
     return {
       status: 'ACTIVE' as const,
-  
+
       inventoryCount: {
         gt: 0,
       },
-  
+
       validFrom: {
         lte: now,
       },
-  
+
       validUntil: {
         gte: now,
       },
@@ -55,6 +55,7 @@ export class ProductsService {
       highlights = [],
       inclusions = [],
       tags = [],
+      images = [],
     } = createProductDto;
 
     return this.prisma.product.create({
@@ -71,6 +72,7 @@ export class ProductsService {
         highlights,
         inclusions,
         tags,
+        images,
       },
     });
   }
@@ -80,11 +82,25 @@ export class ProductsService {
       search,
       destination,
       category,
+      minPrice,
+      maxPrice,
       page = 1,
       limit = 10,
+      sort = 'newest',
     } = query;
 
     const skip = (page - 1) * limit;
+
+    const orderBy =
+      sort === 'oldest'
+        ? { createdAt: 'asc' as const }
+        : sort === 'price_asc'
+          ? { price: 'asc' as const }
+          : sort === 'price_desc'
+            ? { price: 'desc' as const }
+            : sort === 'name'
+              ? { productName: 'asc' as const }
+              : { createdAt: 'desc' as const };
 
     const where = {
       ...this.getAvailableProductFilter(),
@@ -102,6 +118,19 @@ export class ProductsService {
           mode: 'insensitive' as const,
         },
       }),
+
+      ...(minPrice !== undefined || maxPrice !== undefined
+        ? {
+            price: {
+              ...(minPrice !== undefined && {
+                gte: minPrice,
+              }),
+              ...(maxPrice !== undefined && {
+                lte: maxPrice,
+              }),
+            },
+          }
+        : {}),
 
       ...(search && {
         OR: [
@@ -123,6 +152,12 @@ export class ProductsService {
               mode: 'insensitive' as const,
             },
           },
+          {
+            category: {
+              contains: search,
+              mode: 'insensitive' as const,
+            },
+          },
         ],
       }),
     };
@@ -132,9 +167,7 @@ export class ProductsService {
         where,
         skip,
         take: limit,
-        orderBy: {
-          createdAt: 'desc',
-        },
+        orderBy,
       }),
 
       this.prisma.product.count({

@@ -11,13 +11,17 @@ import { GeneratedProduct } from './dto/generated-product.dto';
 import { AiSearchDto } from './dto/ai-search.dto';
 import { AiSearchResult } from './dto/ai-search-result.dto';
 import { PRODUCT_SEARCH_SYSTEM_PROMPT } from './prompts/product-search.prompt';
+import { ProductsService } from '../products/products.service';
 
 @Injectable()
 export class AiService {
   private readonly openai: OpenAI;
   private readonly model: string;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly productsService: ProductsService,
+  ) {
     const apiKey = this.configService.get<string>('OPENAI_API_KEY');
 
     if (!apiKey) {
@@ -217,5 +221,23 @@ export class AiService {
 
       throw new BadGatewayException('Failed to process AI search query.');
     }
+  }
+
+  async searchProducts(dto: AiSearchDto) {
+    const filters = await this.parseSearchQuery(dto);
+
+    const products = await this.productsService.findAll({
+      search: filters.search ?? undefined,
+      destination: filters.destination ?? undefined,
+      category: filters.category ?? undefined,
+      minPrice: filters.minPrice ?? undefined,
+      maxPrice: filters.maxPrice ?? undefined,
+    });
+
+    return {
+      query: dto.query,
+      filters,
+      ...products,
+    };
   }
 }
