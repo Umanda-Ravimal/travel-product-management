@@ -4,7 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 describe('DashboardService', () => {
   let service: DashboardService;
-  const findMany = jest.fn();
+  const findMany = vi.fn();
 
   beforeEach(async () => {
     findMany.mockReset();
@@ -28,6 +28,50 @@ describe('DashboardService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  it('returns zeros when there are no products', async () => {
+    findMany.mockResolvedValue([]);
+
+    await expect(service.getSummary()).resolves.toMatchObject({
+      totalProducts: 0,
+      activeProducts: 0,
+      expiringSoon: 0,
+      expiredProducts: 0,
+      monthlyChangePercent: 0,
+      categoryBreakdown: [],
+    });
+  });
+
+  it('does not count inactive or out-of-stock products as active', async () => {
+    const now = new Date();
+    const lastYear = new Date(now);
+    lastYear.setFullYear(now.getFullYear() - 1);
+    const nextYear = new Date(now.getFullYear() + 1, 0, 1);
+
+    findMany.mockResolvedValue([
+      {
+        category: 'Tour',
+        status: 'INACTIVE',
+        inventoryCount: 8,
+        validFrom: lastYear,
+        validUntil: nextYear,
+        createdAt: lastYear,
+      },
+      {
+        category: 'Tour',
+        status: 'ACTIVE',
+        inventoryCount: 0,
+        validFrom: lastYear,
+        validUntil: nextYear,
+        createdAt: lastYear,
+      },
+    ]);
+
+    const summary = await service.getSummary();
+
+    expect(summary.totalProducts).toBe(2);
+    expect(summary.activeProducts).toBe(0);
   });
 
   it('summarizes product metrics, categories, and monthly overview', async () => {
